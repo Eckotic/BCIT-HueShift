@@ -12445,3 +12445,5 @@
 /Temp/UnityLockfile filter=lfs diff=lfs merge=lfs -text
 *.dwlt filter=lfs diff=lfs merge=lfs -text
 *.settings filter=lfs diff=lfs merge=lfs -text
+*.cm filter=lfs diff=lfs merge=lfs -text
+/Library/expandedItems filter=lfs diff=lfs merge=lfs -text
