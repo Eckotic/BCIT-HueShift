@@ -1,18 +1,3 @@
-using UnityEngine;
-
-public static class CardManager : object
-{
-
-    public static void playerAttacksEnemy(int x)
-    {
-        Debug.Log("I attacked the enemy for " + x + " damage!");
-    }
-    public static void playerGainsBlock(int x)
-    {
-        Debug.Log("I gained " + x + " block!");
-    }
-    public static void playerGainsEnergy(int x)
-    {
-        Debug.Log("I gained " + x + " energy!");
-    }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:eb68c2b5689c905cd971b9cd2f6ab2c9b9f621a71664decdd5b150f8d3354792
+size 459
