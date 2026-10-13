@@ -10,13 +10,11 @@ public class AttackExample : Card
     void Start()
     {
         Debug.Log("I cost " + cost + " energy and my color is " + color);
-        playFromHand();
     }
 
     public override void playFromHand()
     {
         CardManager.playerAttacksEnemy(damage);
-        CardManager.playerGainsBlock(damage);
     }
 
 }

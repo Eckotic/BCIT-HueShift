@@ -8,7 +8,6 @@ public class DefendExample : Card
     void Start()
     {
         Debug.Log("I cost " + cost + " energy and my color is " + color);
-        playFromHand();
     }
 
     public override void playFromHand()
