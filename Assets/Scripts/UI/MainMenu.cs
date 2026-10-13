@@ -1,8 +1,10 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    
+    [SerializeField] 
+    private string gameScene;
     private void Start()
     {
         
@@ -12,5 +14,9 @@ public class MainMenu : MonoBehaviour
     {
         
     }
-    
+
+    public void LoadGame()
+    {
+        SceneManager.LoadScene(gameScene);
+    }
 }
