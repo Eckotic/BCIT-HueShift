@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7f07d58301affa23fae8e28bed9778ac757ccb79d1658d4f16c332b272d22fd3
-size 394
+fileFormatVersion: 2
+guid: 6dff6733c81828141b8ba231dfb86cc0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Materials/Ludo.mat
+  uploadId: 417301

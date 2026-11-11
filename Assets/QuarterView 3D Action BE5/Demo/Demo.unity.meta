@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6e6894e40ea85b0ad7f11219553a3522b4bc524d196c90b3e32cdab568efac07
-size 364
+fileFormatVersion: 2
+guid: 53d9a0a0e6815d94dbce121d1a39cb61
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Demo/Demo.unity
+  uploadId: 417301

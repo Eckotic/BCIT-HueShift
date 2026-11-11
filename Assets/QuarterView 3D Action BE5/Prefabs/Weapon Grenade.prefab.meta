@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c7968f9ad34262d215fd6abd424640e62e2d964c4423472e92979f648ddc7933
-size 377
+fileFormatVersion: 2
+guid: 10653eccf6b69fd47938a227b4bf3863
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Weapon Grenade.prefab
+  uploadId: 417301

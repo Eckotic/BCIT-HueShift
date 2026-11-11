@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c1ca6094a466131555a85998a7ab74f6ee54ee04a6913037f96cb9f094c2c223
-size 374
+fileFormatVersion: 2
+guid: 99cca47ba8d60394e8b16b13b4054a38
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Coin Silver.prefab
+  uploadId: 417301

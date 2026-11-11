@@ -1,3 +1,18 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:247db2ec2db22c511f28ce901f8fbf4bb8d6cffad65b6c7385a22363a10e1484
-size 477
+fileFormatVersion: 2
+guid: edd620b2f6703734fba22d55dc31ef25
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/ReadMe/Scripts/Editor/ReadmeEditorBE5.cs
+  uploadId: 417301

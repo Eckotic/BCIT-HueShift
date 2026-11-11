@@ -1,3 +1,166 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7c22ea11c3789fe3aa13eb919d7c86c5f48d7fc0384adce27cc2257d248c1427
-size 1639
+using System;
+using UnityEngine;
+
+public class BattleEntity : MonoBehaviour
+{
+
+    [SerializeField] private int currentHealth;
+    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private int block;
+    public HealthBar healthBar;
+
+    [Header("Colour")]
+    [Tooltip("The colour this entity starts the fight in. Player: White. Each enemy: its own fixed colour.")]
+    [SerializeField] private CardColor startingColor = CardColor.White;
+
+    [Header("Colour buffs")]
+    [SerializeField] private int redDamageBonus = 3;
+    [SerializeField] private int blueBlockBonus = 3;
+    [SerializeField] private int purpleDamageBonus = 2;
+    [SerializeField] private int purpleBlockBonus = 2;
+    [Tooltip("HP recovered at the start of this entity's turn while Green.")]
+    [SerializeField] private int greenHealPerTurn = 3;
+
+    private CardColor currentColor;
+
+    public CardColor CurrentColor => currentColor;
+    public bool IsDead => currentHealth <= 0;
+
+    public event Action<CardColor> OnCardColorChanged;
+
+    void Awake()
+    {
+        currentColor = startingColor;
+    }
+
+    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    void Start()
+    {
+        currentHealth = maxHealth;
+        healthBar.SetMaxHealth(maxHealth);
+        OnCardColorChanged?.Invoke(currentColor);
+    }
+
+    //TODO: make this look nicer in the future
+    public void TakeDamage(int amount)
+    {
+        if (amount <= 0 || currentHealth <= 0){
+            return;
+        }
+
+        // Orange: damage received is doubled.
+        if (currentColor == CardColor.Orange){
+            amount *= 2;
+        }
+
+        int absorbed = Mathf.Min(block, amount);
+        block -= absorbed;
+        int remaining = amount - absorbed;
+
+        if (remaining > 0){
+            currentHealth = Mathf.Clamp(currentHealth - remaining, 0, maxHealth);
+            healthBar.SetHealth(currentHealth);
+        }
+
+        Debug.Log($"{gameObject.name} took {amount} damage ({absorbed} absorbed by block). HP: {currentHealth}/{maxHealth}, Block: {block}");
+
+        if (currentHealth <= 0){
+            Debug.Log("Entity is now dead!");
+        }
+    }
+
+    public void GainBlock(int amount)
+    {
+        if (amount <= 0){
+            return;
+        }
+
+        block += amount;
+        Debug.Log($"{gameObject.name} Block: {block}");
+    }
+
+    public void ResetBlock()
+    {
+        block = 0;
+    }
+
+    public void Heal(int amount)
+    {
+        if (amount <= 0 || currentHealth <= 0){
+            return;
+        }
+
+        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+        healthBar.SetHealth(currentHealth);
+        Debug.Log($"{gameObject.name} healed {amount}. HP: {currentHealth}/{maxHealth}");
+    }
+
+    // ---------- Colour ----------
+
+    // Sets the colour directly (no mixing).
+    public void SetCardColor(CardColor cardColor)
+    {
+        currentColor = cardColor;
+        OnCardColorChanged?.Invoke(currentColor);
+    }
+
+    // What this entity's colour would become if a card of this colour were played.
+    public CardColor PreviewShift(CardColor added)
+    {
+        return ColorRules.Mix(currentColor, added);
+    }
+
+    // Mixes a card's colour into this entity's colour (paint mixing, see ColorRules).
+    public void ShiftColor(CardColor added)
+    {
+        CardColor next = ColorRules.Mix(currentColor, added);
+        if (next != currentColor)
+        {
+            Debug.Log($"{gameObject.name} shifted {currentColor} + {added} = {next}");
+        }
+        SetCardColor(next);
+    }
+
+    // Start-of-turn colour effects. Call once at the start of this entity's turn.
+    public void StartOwnTurn()
+    {
+        if (currentColor == CardColor.Black)
+        {
+            Debug.Log($"{gameObject.name}'s Black wore off.");
+            SetCardColor(CardColor.White);
+        }
+        else if (currentColor == CardColor.Green)
+        {
+            Heal(greenHealPerTurn);
+        }
+    }
+
+    public int OutgoingDamage(int baseDamage)
+    {
+        return OutgoingDamage(baseDamage, currentColor);
+    }
+
+    // Damage this entity would deal while in the given colour.
+    public int OutgoingDamage(int baseDamage, CardColor asColor)
+    {
+        switch (asColor)
+        {
+            case CardColor.Red: return baseDamage + redDamageBonus;
+            case CardColor.Purple: return baseDamage + purpleDamageBonus;
+            case CardColor.Orange: return baseDamage * 2;
+            default: return baseDamage;
+        }
+    }
+
+    // Block this entity would gain while in the given colour.
+    public int BlockGain(int baseBlock, CardColor asColor)
+    {
+        switch (asColor)
+        {
+            case CardColor.Blue: return baseBlock + blueBlockBonus;
+            case CardColor.Purple: return baseBlock + purpleBlockBonus;
+            default: return baseBlock;
+        }
+    }
+
+}

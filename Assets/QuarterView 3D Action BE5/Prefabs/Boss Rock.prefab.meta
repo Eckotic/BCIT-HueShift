@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9f32bbdb753d4384d6213938cec66dcfd2c73e90e98350e6a59cb1502c47fa6f
-size 372
+fileFormatVersion: 2
+guid: c49bd73e6df5cd84e85e421b183064f8
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Boss Rock.prefab
+  uploadId: 417301

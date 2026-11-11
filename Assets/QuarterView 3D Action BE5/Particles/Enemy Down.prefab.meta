@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9a449183f51b673a2ea59495ce0bfcf4c7920eda7ccd02cedab6d145e76d3f4f
-size 375
+fileFormatVersion: 2
+guid: be16a2ead503d12418c1f228fcee2f7c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Particles/Enemy Down.prefab
+  uploadId: 417301

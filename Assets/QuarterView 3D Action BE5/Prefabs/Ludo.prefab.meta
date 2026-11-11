@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ec57033534c09b97e1c1a8a262bcd9e50f38e9644ca4c65e8435429b3716fffb
-size 367
+fileFormatVersion: 2
+guid: cd8e3c00b0f28f0419943b46a579c6fc
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Ludo.prefab
+  uploadId: 417301

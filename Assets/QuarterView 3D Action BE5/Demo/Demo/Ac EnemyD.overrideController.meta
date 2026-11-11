@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:b4a2b728790e534504ae944c81b5938ca419f49b9b1b97a1ca02dc1009b2dd1e
-size 421
+fileFormatVersion: 2
+guid: 20b0472eebcfd7143845b13e3bececf3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 22100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Demo/Demo/Ac EnemyD.overrideController
+  uploadId: 417301

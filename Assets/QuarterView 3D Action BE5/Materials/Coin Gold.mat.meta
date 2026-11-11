@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7d39c435987a2aacd1ebc8d7ed7048b51b5040576726cbaa07981d478b010a16
-size 399
+fileFormatVersion: 2
+guid: 9badd50f88a36314a9b72ddf412b424d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Materials/Coin Gold.mat
+  uploadId: 417301

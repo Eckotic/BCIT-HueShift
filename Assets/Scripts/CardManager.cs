@@ -1,3 +1,26 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1c84806cf138d20eee493112aae9a72acbb68d4ebe581f5dc55469aa9759e8bd
-size 448
+using UnityEngine;
+
+public static class CardManager : object
+{
+
+    public static void playerAttacksEnemy(int x, BattleEntity target)
+    {
+        target.TakeDamage(x);
+    }
+    public static void playerGainsBlock(int x, BattleEntity target)
+    {
+        if (target != null)
+        {
+            target.GainBlock(x);
+        }
+    }
+    public static void playerGainsEnergy(int x, DeckManager deck)
+    {
+        if (deck == null)
+        {
+            Debug.LogWarning("playerGainsEnergy: no DeckManager to give energy to.");
+            return;
+        }
+        deck.GainEnergy(x);
+    }
+}
