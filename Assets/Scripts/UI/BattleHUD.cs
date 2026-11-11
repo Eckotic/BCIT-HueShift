@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -42,6 +43,52 @@ public class BattleHUD : MonoBehaviour
     private TMP_Text energyText;
     private int lastEnergy = int.MinValue;
     private string lastEnemyTitle;
+    private BattleEntity playerEntity;
+    private BattleEntity enemyEntity;
+    private RectTransform playerPanelRect;
+    private RectTransform enemyPanelRect;
+    private Image energyGlow;
+    private Image energyOuterRing;
+    private Image energyInnerRing;
+    private RectTransform energyPips;
+    private RectTransform endTurnRect;
+    private Button endTurnButton;
+
+    private const float PileWidth = 230f;
+    private const float PileHeight = 276f;
+
+    // Greys out End Turn while the enemy is acting.
+    public void SetEndTurnInteractable(bool interactable)
+    {
+        if (endTurnButton != null)
+        {
+            endTurnButton.interactable = interactable;
+        }
+    }
+
+    // Screen point at the middle of the bottom edge of the enemy's status panel.
+    public Vector3 EnemyPanelBottomCentre()
+    {
+        if (enemyPanelRect == null)
+        {
+            return Vector3.zero;
+        }
+        Vector3[] corners = new Vector3[4];
+        enemyPanelRect.GetWorldCorners(corners);
+        return (corners[0] + corners[3]) / 2f;
+    }
+
+    // Screen y of the bottom edge of the enemy's status panel (so labels can stay below it).
+    public float EnemyPanelBottom()
+    {
+        if (enemyPanelRect == null)
+        {
+            return float.MaxValue;
+        }
+        Vector3[] corners = new Vector3[4];
+        enemyPanelRect.GetWorldCorners(corners);
+        return corners[0].y;
+    }
 
     public static BattleHUD Create(BattleEntity player, BattleEntity enemy, DeckManager deck,
         EntityVisual playerVisual, EntityVisual enemyVisual, Func<string> enemyTitle)
@@ -70,18 +117,20 @@ public class BattleHUD : MonoBehaviour
         HideOldBar(player);
         HideOldBar(enemy);
 
+        playerEntity = player;
+        enemyEntity = enemy;
         if (player != null)
         {
             playerPanel = BuildPanel(player, true);
-            player.OnDamaged += (hp, blocked) => OnDamaged(playerVisual, hp, blocked);
-            player.OnBlockGained += amount => Float(playerVisual, $"+{amount} BLOCK", UIShapes.BlockBlue, 44f, 0f);
+            player.OnDamaged += (hp, blocked) => OnDamaged(player, playerVisual, hp, blocked);
+            player.OnBlockGained += amount => OnBlock(playerVisual, amount);
             player.OnHealed += amount => Float(playerVisual, $"+{amount}", UIShapes.HealGreen, 56f, 0f);
         }
         if (enemy != null)
         {
             enemyPanel = BuildPanel(enemy, false);
-            enemy.OnDamaged += (hp, blocked) => OnDamaged(enemyVisual, hp, blocked);
-            enemy.OnBlockGained += amount => Float(enemyVisual, $"+{amount} BLOCK", UIShapes.BlockBlue, 44f, 0f);
+            enemy.OnDamaged += (hp, blocked) => OnDamaged(enemy, enemyVisual, hp, blocked);
+            enemy.OnBlockGained += amount => OnBlock(enemyVisual, amount);
             enemy.OnHealed += amount => Float(enemyVisual, $"+{amount}", UIShapes.HealGreen, 56f, 0f);
         }
 
@@ -96,6 +145,13 @@ public class BattleHUD : MonoBehaviour
             layout.spawnFrom = canvas.transform.Find("DrawPile") as RectTransform;
             layout.maxHandWidth = 1000f;
         }
+        if (deck != null)
+        {
+            deck.PlayAnimation = AnimatePlay;
+            deck.DiscardAnimation = AnimateDiscard;
+        }
+
+        IntroAnimation();
 
         Material spriteMaterial = null;
         if (enemyVisual != null && enemyVisual.Body != null)
@@ -106,7 +162,12 @@ public class BattleHUD : MonoBehaviour
         {
             spriteMaterial = playerVisual.Body.sharedMaterial;
         }
-        BattleBackdrop.Create(Camera.main, spriteMaterial);
+        BattleBackdrop backdrop = BattleBackdrop.Create(Camera.main, spriteMaterial);
+        if (backdrop != null)
+        {
+            backdrop.AddBacklight(playerVisual);
+            backdrop.AddBacklight(enemyVisual);
+        }
     }
 
     void Update()
@@ -132,12 +193,20 @@ public class BattleHUD : MonoBehaviour
     {
         StatusPanel panel = new StatusPanel { entity = entity, isPlayer = isPlayer };
 
-        Image root = BattleUI.Box(canvas.transform, isPlayer ? "PlayerStatus" : "EnemyStatus", UIShapes.RoundedRect(22), UIShapes.Panel);
+        Image root = BattleUI.Box(canvas.transform, isPlayer ? "PlayerStatus" : "EnemyStatus", UIShapes.FramedPanel(22, 3), Color.white);
         RectTransform rect = root.rectTransform;
         rect.anchorMin = rect.anchorMax = rect.pivot = isPlayer ? new Vector2(0f, 1f) : new Vector2(1f, 1f);
         rect.anchoredPosition = isPlayer ? new Vector2(32f, -28f) : new Vector2(-32f, -28f);
         rect.sizeDelta = new Vector2(560f, 150f);
         BattleUI.Shadow(root);
+        if (isPlayer)
+        {
+            playerPanelRect = rect;
+        }
+        else
+        {
+            enemyPanelRect = rect;
+        }
 
         // Name (top-left).
         panel.nameText = BattleUI.Text(rect, "Name", isPlayer ? "YOU" : "ENEMY", 32f, UIShapes.TextLight, FontStyles.Bold);
@@ -273,27 +342,70 @@ public class BattleHUD : MonoBehaviour
 
     // ---------- Energy, piles, End Turn ----------
 
+    // A rune orb: amber gem in the middle, two gold rune rings turning in opposite directions,
+    // a breathing glow, the number on the gem, and a row of diamond pips (one per energy).
     private void BuildEnergyOrb()
     {
         energyOrb = BattleUI.Rect(canvas.transform, "EnergyOrb");
         energyOrb.anchorMin = energyOrb.anchorMax = new Vector2(0f, 0f);
-        energyOrb.anchoredPosition = new Vector2(115f, 330f);
-        energyOrb.sizeDelta = new Vector2(140f, 140f);
+        energyOrb.anchoredPosition = new Vector2(145f, 440f);
+        energyOrb.sizeDelta = new Vector2(124f, 124f);
 
-        Image glow = BattleUI.Box(energyOrb, "Glow", UIShapes.Glow(128), new Color(1f, 0.79f, 0.24f, 0.35f), false);
-        glow.rectTransform.sizeDelta = new Vector2(260f, 260f);
-        Image ring = BattleUI.Box(energyOrb, "Ring", UIShapes.Circle(128), UIShapes.Hex("2A2416"), false);
-        ring.rectTransform.sizeDelta = new Vector2(140f, 140f);
-        energyFill = BattleUI.Box(energyOrb, "Fill", UIShapes.Circle(128), UIShapes.EnergyYellow, false);
-        energyFill.rectTransform.sizeDelta = new Vector2(120f, 120f);
+        energyGlow = BattleUI.Box(energyOrb, "Glow", UIShapes.Glow(128), new Color(1f, 0.72f, 0.25f, 0.4f), false);
+        energyGlow.rectTransform.sizeDelta = new Vector2(210f, 210f);
+        energyGlow.DOFade(0.18f, 1.4f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo).SetLink(energyGlow.gameObject);
+        energyGlow.rectTransform.DOScale(1.1f, 1.4f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo).SetLink(energyGlow.gameObject);
 
-        energyText = BattleUI.Text(energyOrb, "Text", "", 46f, UIShapes.Hex("1A1A1A"), FontStyles.Bold);
-        energyText.rectTransform.sizeDelta = new Vector2(140f, 80f);
+        energyOuterRing = BattleUI.Box(energyOrb, "OuterRunes", UIShapes.RuneRing(256, 12), UIShapes.Gold, false);
+        energyOuterRing.rectTransform.sizeDelta = new Vector2(124f, 124f);
+        energyOuterRing.rectTransform.DORotate(new Vector3(0f, 0f, -360f), 40f, RotateMode.FastBeyond360)
+            .SetEase(Ease.Linear).SetLoops(-1).SetLink(energyOuterRing.gameObject);
 
-        TMP_Text label = BattleUI.Text(energyOrb, "Label", "ENERGY", 20f, UIShapes.TextMuted, FontStyles.Bold);
-        label.characterSpacing = 6f;
-        label.rectTransform.sizeDelta = new Vector2(200f, 30f);
-        label.rectTransform.anchoredPosition = new Vector2(0f, -92f);
+        energyInnerRing = BattleUI.Box(energyOrb, "InnerRunes", UIShapes.RuneRing(256, 8), new Color(UIShapes.GoldLight.r, UIShapes.GoldLight.g, UIShapes.GoldLight.b, 0.55f), false);
+        energyInnerRing.rectTransform.sizeDelta = new Vector2(99f, 99f);
+        energyInnerRing.rectTransform.DORotate(new Vector3(0f, 0f, 360f), 25f, RotateMode.FastBeyond360)
+            .SetEase(Ease.Linear).SetLoops(-1).SetLink(energyInnerRing.gameObject);
+
+        energyFill = BattleUI.Box(energyOrb, "Core", UIShapes.EnergyCore(256), Color.white, false);
+        energyFill.rectTransform.sizeDelta = new Vector2(77f, 77f);
+
+        TextMeshProUGUI number = BattleUI.Text(energyOrb, "Text", "", 44f, UIShapes.Hex("2B1405"), FontStyles.Bold);
+        number.rectTransform.sizeDelta = new Vector2(80f, 60f);
+        energyText = number;
+
+        energyPips = BattleUI.Rect(energyOrb, "Pips");
+        energyPips.anchoredPosition = new Vector2(0f, -78f);
+        energyPips.sizeDelta = new Vector2(160f, 18f);
+        HorizontalLayoutGroup pipLayout = energyPips.gameObject.AddComponent<HorizontalLayoutGroup>();
+        pipLayout.spacing = 6f;
+        pipLayout.childAlignment = TextAnchor.MiddleCenter;
+        pipLayout.childControlWidth = false;
+        pipLayout.childControlHeight = false;
+        pipLayout.childForceExpandWidth = false;
+        pipLayout.childForceExpandHeight = false;
+
+        TMP_Text label = BattleUI.Text(energyOrb, "Label", "ENERGY", 17f, UIShapes.Gold, FontStyles.Bold);
+        label.characterSpacing = 8f;
+        label.rectTransform.sizeDelta = new Vector2(200f, 24f);
+        label.rectTransform.anchoredPosition = new Vector2(0f, -100f);
+    }
+
+    private void RefreshPips(int energy, int max)
+    {
+        int count = Mathf.Max(energy, max);
+        while (energyPips.childCount < count)
+        {
+            Image pip = BattleUI.Box(energyPips, "Pip", UIShapes.Diamond(true), UIShapes.Gold, false);
+            pip.rectTransform.sizeDelta = new Vector2(16f, 16f);
+        }
+        for (int i = 0; i < energyPips.childCount; i++)
+        {
+            Image pip = energyPips.GetChild(i).GetComponent<Image>();
+            pip.gameObject.SetActive(i < count);
+            bool lit = i < energy;
+            pip.sprite = UIShapes.Diamond(lit);
+            pip.color = lit ? (i >= max ? UIShapes.GoldLight : UIShapes.Gold) : new Color(UIShapes.Gold.r, UIShapes.Gold.g, UIShapes.Gold.b, 0.45f);
+        }
     }
 
     private void RefreshEnergy()
@@ -307,11 +419,21 @@ public class BattleHUD : MonoBehaviour
         {
             return;
         }
-        energyText.text = $"{energy}/{deck.MaxEnergy}";
-        energyFill.color = energy > 0 ? UIShapes.EnergyYellow : UIShapes.Hex("5A5D6B");
+        energyText.text = energy.ToString();
+        RefreshPips(energy, deck.MaxEnergy);
+        bool hasEnergy = energy > 0;
+        energyFill.color = hasEnergy ? Color.white : new Color(0.4f, 0.4f, 0.45f);
+        energyText.color = hasEnergy ? UIShapes.Hex("2B1405") : UIShapes.Hex("D0D0D8");
+        energyOuterRing.color = hasEnergy ? UIShapes.Gold : new Color(UIShapes.Gold.r, UIShapes.Gold.g, UIShapes.Gold.b, 0.35f);
+        if (energyGlow != null)
+        {
+            energyGlow.enabled = hasEnergy;
+        }
         if (lastEnergy != int.MinValue)
         {
-            UITween.Punch(energyOrb, 0.15f);
+            energyOrb.DOKill(true);
+            energyOrb.localScale = Vector3.one;
+            energyOrb.DOPunchScale(Vector3.one * (energy > lastEnergy ? 0.3f : 0.15f), 0.35f, 7, 0.6f);
         }
         lastEnergy = energy;
     }
@@ -324,16 +446,35 @@ public class BattleHUD : MonoBehaviour
             return;
         }
 
-        pile.sizeDelta = new Vector2(150f, 180f);
+        // Close to the size of a card in hand, in the bottom corners.
+        pile.anchorMin = pile.anchorMax = pile.pivot = isDiscard ? new Vector2(1f, 0f) : new Vector2(0f, 0f);
+        pile.anchoredPosition = isDiscard ? new Vector2(-30f, 40f) : new Vector2(30f, 40f);
+        pile.sizeDelta = new Vector2(PileWidth, PileHeight);
+
+        // A second card back peeking out behind, so it reads as a stack.
+        if (deck != null && deck.CardBackSprite != null)
+        {
+            Image under = BattleUI.Box(pile, "StackBehind", deck.CardBackSprite, isDiscard ? new Color(0.45f, 0.46f, 0.55f) : new Color(0.7f, 0.7f, 0.75f), false);
+            under.preserveAspect = true;
+            BattleUI.Stretch(under.rectTransform);
+            under.rectTransform.anchoredPosition = new Vector2(isDiscard ? -8f : 8f, -6f);
+            under.rectTransform.localRotation = Quaternion.Euler(0f, 0f, isDiscard ? 4f : -4f);
+            under.transform.SetAsFirstSibling();
+            // The pile's own Image draws first (it's the parent), so draw the top card as a child instead.
+            Image top = BattleUI.Box(pile, "TopCard", deck.CardBackSprite, isDiscard ? new Color(0.6f, 0.62f, 0.72f) : Color.white, false);
+            top.preserveAspect = true;
+            BattleUI.Stretch(top.rectTransform);
+            top.transform.SetSiblingIndex(1);
+        }
+
         Image image = pile.GetComponent<Image>();
         if (image != null)
         {
             if (deck != null && deck.CardBackSprite != null)
             {
-                image.sprite = deck.CardBackSprite;
-                image.type = Image.Type.Simple;
-                image.preserveAspect = true;
-                image.color = isDiscard ? new Color(0.6f, 0.62f, 0.72f) : Color.white;
+                // The pile's own Image becomes an invisible click area (the draw pile is still a button).
+                image.sprite = null;
+                image.color = new Color(1f, 1f, 1f, 0f);
             }
             else
             {
@@ -344,24 +485,28 @@ public class BattleHUD : MonoBehaviour
         }
 
         // Count goes into a round badge on the corner.
+        // Count in a gold-rimmed badge on the inner top corner.
         TMP_Text count = pile.GetComponentInChildren<TMP_Text>(true);
-        Image badge = BattleUI.Box(pile, "CountBadge", UIShapes.Circle(128), isDiscard ? UIShapes.Hex("5A5D6B") : UIShapes.Accent, false);
-        RectTransform badgeRect = badge.rectTransform;
-        badgeRect.anchorMin = badgeRect.anchorMax = new Vector2(isDiscard ? 0.12f : 0.88f, 0.9f);
-        badgeRect.sizeDelta = new Vector2(58f, 58f);
-        BattleUI.Shadow(badge, 3f);
+        Image rim = BattleUI.Box(pile, "CountBadge", UIShapes.Circle(128), UIShapes.Gold, false);
+        RectTransform badgeRect = rim.rectTransform;
+        badgeRect.anchorMin = badgeRect.anchorMax = new Vector2(isDiscard ? 0.14f : 0.86f, 0.88f);
+        badgeRect.sizeDelta = new Vector2(74f, 74f);
+        BattleUI.Shadow(rim, 4f);
+        Image inner = BattleUI.Box(badgeRect, "Inner", UIShapes.Circle(128), UIShapes.Navy, false);
+        BattleUI.Stretch(inner.rectTransform, 5f);
         if (count != null)
         {
             count.transform.SetParent(badgeRect, false);
+            count.transform.SetAsLastSibling();
             BattleUI.Stretch(count.rectTransform);
-            count.fontSize = 28f;
+            count.fontSize = 34f;
             count.fontStyle = FontStyles.Bold;
-            count.color = Color.white;
+            count.color = UIShapes.GoldLight;
             count.alignment = TextAlignmentOptions.Center;
         }
 
-        TMP_Text caption = BattleUI.Text(pile, "Caption", label, 20f, UIShapes.TextMuted, FontStyles.Bold);
-        caption.characterSpacing = 6f;
+        TMP_Text caption = BattleUI.Text(pile, "Caption", label, 22f, UIShapes.Gold, FontStyles.Bold);
+        caption.characterSpacing = 8f;
         RectTransform captionRect = caption.rectTransform;
         captionRect.anchorMin = captionRect.anchorMax = new Vector2(0.5f, 0f);
         captionRect.pivot = new Vector2(0.5f, 1f);
@@ -377,28 +522,45 @@ public class BattleHUD : MonoBehaviour
             return;
         }
 
+        // A gold-framed plaque with pointed ends, above the discard pile, centred over it.
+        const float width = 300f;
+        const float height = 96f;
         button.anchorMin = button.anchorMax = new Vector2(1f, 0f);
-        button.pivot = new Vector2(1f, 0f);
-        button.anchoredPosition = new Vector2(-40f, 262f);
-        button.sizeDelta = new Vector2(250f, 84f);
+        button.pivot = new Vector2(0.5f, 0.5f); // scale from the middle on hover
+        button.anchoredPosition = new Vector2(-30f - PileWidth / 2f - 5f, 40f + PileHeight + 30f + height / 2f);
+        button.sizeDelta = new Vector2(width, height);
+        endTurnRect = button;
+        button.gameObject.AddComponent<UIHover>();
+
+        // Soft gold glow behind it that breathes, so it reads as the thing to press.
+        // (A sibling placed just before the button, so it draws behind it.)
+        Image glow = BattleUI.Box(button.parent, "EndTurnGlow", UIShapes.Glow(128), new Color(UIShapes.Gold.r, UIShapes.Gold.g, UIShapes.Gold.b, 0.28f), false);
+        glow.rectTransform.anchorMin = glow.rectTransform.anchorMax = button.anchorMin;
+        glow.rectTransform.anchoredPosition = button.anchoredPosition;
+        glow.rectTransform.sizeDelta = new Vector2(width * 1.35f, height * 2.4f);
+        glow.transform.SetSiblingIndex(button.GetSiblingIndex());
+        glow.DOFade(0.1f, 1.3f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo).SetLink(glow.gameObject);
 
         Image image = button.GetComponent<Image>();
         if (image != null)
         {
-            image.sprite = UIShapes.RoundedRect(24);
-            image.type = Image.Type.Sliced;
-            image.color = UIShapes.Accent;
-            BattleUI.Shadow(image);
+            image.sprite = UIShapes.Plaque((int)width, (int)height);
+            image.type = Image.Type.Simple;
+            image.color = Color.white;
+            image.alphaHitTestMinimumThreshold = 0f;
+            BattleUI.Shadow(image, 6f, 0.5f);
         }
 
         Button uiButton = button.GetComponent<Button>();
         if (uiButton != null)
         {
+            endTurnButton = uiButton;
             ColorBlock colors = uiButton.colors;
             colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(0.85f, 0.85f, 0.85f);
-            colors.pressedColor = new Color(0.7f, 0.7f, 0.7f);
+            colors.highlightedColor = new Color(1f, 0.95f, 0.85f);
+            colors.pressedColor = new Color(0.8f, 0.75f, 0.65f);
             colors.selectedColor = Color.white;
+            colors.disabledColor = new Color(0.55f, 0.55f, 0.6f, 0.75f);
             uiButton.colors = colors;
         }
 
@@ -406,18 +568,25 @@ public class BattleHUD : MonoBehaviour
         if (text != null)
         {
             text.text = "END TURN";
-            text.fontSize = 30f;
+            text.fontSize = 34f;
             text.fontStyle = FontStyles.Bold;
-            text.characterSpacing = 4f;
+            text.characterSpacing = 6f;
             text.color = Color.white;
+            text.enableVertexGradient = true;
+            text.colorGradient = new VertexGradient(UIShapes.GoldLight, UIShapes.GoldLight, UIShapes.Gold, UIShapes.Gold);
             text.alignment = TextAlignmentOptions.Center;
             BattleUI.Stretch(text.rectTransform);
+            text.transform.SetAsLastSibling();
+            if (text is TextMeshProUGUI ugui)
+            {
+                BattleUI.TextShadow(ugui, 0.3f, -0.5f);
+            }
         }
     }
 
     // ---------- Hit effects ----------
 
-    private void OnDamaged(EntityVisual visual, int hpLost, int blocked)
+    private void OnDamaged(BattleEntity entity, EntityVisual visual, int hpLost, int blocked)
     {
         if (hpLost > 0)
         {
@@ -426,11 +595,231 @@ public class BattleHUD : MonoBehaviour
                 visual.PlayHit(hpLost);
             }
             Float(visual, $"-{hpLost}", UIShapes.HpFill, 72f, 0f);
+            Sfx.Play(t => t.hit);
+
+            // Shards in the attacker's colour fly off the target.
+            BattleEntity attacker = entity == playerEntity ? enemyEntity : playerEntity;
+            Color shardColor = attacker != null ? UIShapes.ForCardColor(attacker.CurrentColor) : Color.white;
+            Burst(visual, shardColor, Mathf.Clamp(6 + hpLost, 8, 18));
+
+            if (entity == playerEntity && Camera.main != null)
+            {
+                Camera.main.transform.DOComplete();
+                Camera.main.transform.DOShakePosition(0.3f, Mathf.Clamp(hpLost / 25f, 0.1f, 0.45f), 25, 90f, false, true);
+            }
         }
         if (blocked > 0)
         {
             Float(visual, $"{blocked} BLOCKED", UIShapes.BlockBlue, 36f, -70f);
+            if (hpLost == 0)
+            {
+                Sfx.Play(t => t.blockGain, 0.8f, 0.15f);
+            }
         }
+    }
+
+    private void OnBlock(EntityVisual visual, int amount)
+    {
+        Float(visual, $"+{amount} BLOCK", UIShapes.BlockBlue, 44f, 0f);
+        Sfx.Play(t => t.blockGain, 0.7f);
+        if (visual != null)
+        {
+            visual.Hop();
+        }
+    }
+
+    // Little circles, triangles and squares bursting out of a sprite.
+    private void Burst(EntityVisual visual, Color color, int count)
+    {
+        if (visual == null || visual.Body == null || Camera.main == null)
+        {
+            return;
+        }
+        Vector2 origin = Camera.main.WorldToScreenPoint(visual.VisibleBounds().center);
+        for (int i = 0; i < count; i++)
+        {
+            Image shard = BattleUI.Box(canvas.transform, "Shard", UIShapes.Outline(i % 3, 64, 14f), color, false);
+            RectTransform rect = shard.rectTransform;
+            float size = UnityEngine.Random.Range(22f, 46f);
+            rect.sizeDelta = new Vector2(size, size);
+            rect.position = origin + UnityEngine.Random.insideUnitCircle * 30f;
+            rect.localRotation = Quaternion.Euler(0f, 0f, UnityEngine.Random.Range(0f, 360f));
+
+            Vector2 direction = UnityEngine.Random.insideUnitCircle.normalized;
+            float distance = UnityEngine.Random.Range(140f, 320f);
+            float duration = UnityEngine.Random.Range(0.45f, 0.75f);
+            Sequence fly = DOTween.Sequence().SetLink(shard.gameObject);
+            fly.Append(rect.DOMove(rect.position + (Vector3)(direction * distance), duration).SetEase(Ease.OutCubic));
+            fly.Join(rect.DORotate(new Vector3(0f, 0f, UnityEngine.Random.Range(-360f, 360f)), duration, RotateMode.FastBeyond360));
+            fly.Join(rect.DOScale(0.2f, duration).SetEase(Ease.InQuad));
+            fly.Join(shard.DOFade(0f, duration).SetEase(Ease.InQuad));
+            fly.OnComplete(() => Destroy(shard.gameObject));
+        }
+    }
+
+    // ---------- Card animations ----------
+
+    // A played card pops up, then shoots at its target (the enemy for attacks, you otherwise) and fades.
+    private void AnimatePlay(GameObject cardObject, Card card)
+    {
+        RectTransform rect = cardObject.transform as RectTransform;
+        if (rect == null || canvas == null)
+        {
+            Destroy(cardObject);
+            return;
+        }
+        PrepareFlyingCard(cardObject, rect, out CanvasGroup group);
+
+        bool isAttack = card is AttackExample;
+        EntityVisual target = isAttack ? enemyVisual : playerVisual;
+        Vector3 targetPos = rect.position + Vector3.up * 300f;
+        if (target != null && target.Body != null && Camera.main != null)
+        {
+            targetPos = Camera.main.WorldToScreenPoint(target.VisibleBounds().center);
+        }
+
+        if (isAttack && playerVisual != null && enemyVisual != null)
+        {
+            playerVisual.Lunge(enemyVisual.transform.position);
+        }
+        Sfx.Play(t => t.cardPlay, 0.8f, 0.1f);
+
+        Sequence play = DOTween.Sequence().SetLink(cardObject);
+        play.Append(rect.DOMove(rect.position + Vector3.up * 90f, 0.12f).SetEase(Ease.OutQuad));
+        play.Join(rect.DORotate(Vector3.zero, 0.12f));
+        play.Join(rect.DOScale(1.25f, 0.12f).SetEase(Ease.OutQuad));
+        play.Append(rect.DOMove(targetPos, 0.24f).SetEase(Ease.InQuad));
+        play.Join(rect.DOScale(0.35f, 0.24f).SetEase(Ease.InQuad));
+        play.Join(group.DOFade(0f, 0.24f).SetEase(Ease.InQuart));
+        play.OnComplete(() => Destroy(cardObject));
+    }
+
+    // End of turn: each card in hand flies to the discard pile, one after another.
+    private void AnimateDiscard(GameObject cardObject, int index)
+    {
+        RectTransform rect = cardObject.transform as RectTransform;
+        RectTransform pile = canvas != null ? canvas.transform.Find("DiscardPile") as RectTransform : null;
+        if (rect == null || pile == null)
+        {
+            Destroy(cardObject);
+            return;
+        }
+        PrepareFlyingCard(cardObject, rect, out CanvasGroup group);
+        Vector3 pileCentre = pile.TransformPoint(pile.rect.center);
+
+        Sequence discard = DOTween.Sequence().SetLink(cardObject);
+        discard.AppendInterval(index * 0.06f);
+        discard.AppendCallback(() => Sfx.Play(t => t.cardDiscard, 0.35f, 0.15f));
+        discard.Append(rect.DOMove(pileCentre, 0.32f).SetEase(Ease.InCubic));
+        discard.Join(rect.DOScale(0.3f, 0.32f).SetEase(Ease.InQuad));
+        discard.Join(rect.DORotate(new Vector3(0f, 0f, -40f), 0.32f));
+        discard.Join(group.DOFade(0f, 0.32f).SetEase(Ease.InQuart));
+        discard.OnComplete(() =>
+        {
+            Destroy(cardObject);
+            pile.DOKill(true);
+            pile.DOPunchScale(Vector3.one * 0.08f, 0.2f, 6, 0.5f);
+        });
+    }
+
+    // Takes a card out of the hand (so the fan closes up) and stops it being clickable.
+    private void PrepareFlyingCard(GameObject cardObject, RectTransform rect, out CanvasGroup group)
+    {
+        Button button = cardObject.GetComponent<Button>();
+        if (button != null)
+        {
+            button.enabled = false;
+        }
+        group = cardObject.GetComponent<CanvasGroup>();
+        if (group == null)
+        {
+            group = cardObject.AddComponent<CanvasGroup>();
+        }
+        group.blocksRaycasts = false;
+        rect.SetParent(canvas.transform, true);
+        rect.SetAsLastSibling();
+    }
+
+    // ---------- Banners and intro ----------
+
+    // "YOUR TURN" / "ENEMY TURN" band that sweeps across the middle of the screen.
+    public float ShowBanner(string text, Color accent)
+    {
+        if (canvas == null)
+        {
+            return 0f;
+        }
+        Image band = BattleUI.Box(canvas.transform, "Banner", null, new Color(0.05f, 0.06f, 0.09f, 0.82f), false);
+        RectTransform bandRect = band.rectTransform;
+        bandRect.anchorMin = new Vector2(0f, 0.5f);
+        bandRect.anchorMax = new Vector2(1f, 0.5f);
+        bandRect.sizeDelta = new Vector2(0f, 150f);
+        bandRect.anchoredPosition = new Vector2(0f, 60f);
+        bandRect.SetAsLastSibling();
+        CanvasGroup group = band.gameObject.AddComponent<CanvasGroup>();
+        group.blocksRaycasts = false;
+
+        Image stripeTop = BattleUI.Box(bandRect, "StripeTop", null, accent, false);
+        stripeTop.rectTransform.anchorMin = new Vector2(0f, 1f);
+        stripeTop.rectTransform.anchorMax = new Vector2(1f, 1f);
+        stripeTop.rectTransform.sizeDelta = new Vector2(0f, 6f);
+        Image stripeBottom = BattleUI.Box(bandRect, "StripeBottom", null, accent, false);
+        stripeBottom.rectTransform.anchorMin = new Vector2(0f, 0f);
+        stripeBottom.rectTransform.anchorMax = new Vector2(1f, 0f);
+        stripeBottom.rectTransform.sizeDelta = new Vector2(0f, 6f);
+
+        TextMeshProUGUI label = BattleUI.Text(bandRect, "Text", text, 84f, Color.white, FontStyles.Bold);
+        label.characterSpacing = 12f;
+        label.enableVertexGradient = true;
+        label.colorGradient = new VertexGradient(Color.white, Color.white, accent, accent);
+        label.rectTransform.sizeDelta = new Vector2(1400f, 140f);
+
+        const float hold = 0.55f;
+        Sequence banner = DOTween.Sequence().SetLink(band.gameObject);
+        bandRect.localScale = new Vector3(1f, 0f, 1f);
+        label.rectTransform.anchoredPosition = new Vector2(-500f, 0f);
+        group.alpha = 1f;
+        banner.Append(bandRect.DOScaleY(1f, 0.18f).SetEase(Ease.OutQuad));
+        banner.Join(label.rectTransform.DOAnchorPosX(0f, 0.35f).SetEase(Ease.OutCubic));
+        banner.AppendInterval(hold);
+        banner.Append(label.rectTransform.DOAnchorPosX(500f, 0.25f).SetEase(Ease.InCubic));
+        banner.Join(group.DOFade(0f, 0.25f));
+        banner.OnComplete(() => Destroy(band.gameObject));
+        Sfx.Play(t => t.turnStart, 0.6f, 0f);
+        return 0.35f + hold; // how long until the banner starts leaving
+    }
+
+    // Panels slide in from above, the orb and End Turn pop in.
+    private void IntroAnimation()
+    {
+        SlideIn(playerPanelRect, 0.1f);
+        SlideIn(enemyPanelRect, 0.2f);
+        if (energyOrb != null)
+        {
+            energyOrb.localScale = Vector3.zero;
+            energyOrb.DOScale(1f, 0.45f).SetEase(Ease.OutBack).SetDelay(0.35f);
+        }
+        if (endTurnRect != null)
+        {
+            endTurnRect.localScale = Vector3.zero;
+            endTurnRect.DOScale(1f, 0.45f).SetEase(Ease.OutBack).SetDelay(0.45f);
+        }
+    }
+
+    private static void SlideIn(RectTransform rect, float delay)
+    {
+        if (rect == null)
+        {
+            return;
+        }
+        Vector2 target = rect.anchoredPosition;
+        rect.anchoredPosition = target + new Vector2(0f, 220f);
+        rect.DOAnchorPos(target, 0.5f).SetEase(Ease.OutBack).SetDelay(delay);
+    }
+
+    void OnDestroy()
+    {
+        DOTween.KillAll(false);
     }
 
     private void Float(EntityVisual visual, string text, Color color, float size, float yOffset)
@@ -439,7 +828,7 @@ public class BattleHUD : MonoBehaviour
         {
             return;
         }
-        Vector3 screen = Camera.main.WorldToScreenPoint(visual.Body.bounds.center);
+        Vector3 screen = Camera.main.WorldToScreenPoint(visual.VisibleBounds().center);
         UITween.FloatingText(canvas.transform, (Vector2)screen + new Vector2(0f, yOffset), text, color, size);
     }
 
@@ -466,6 +855,20 @@ public class BattleHUD : MonoBehaviour
         if (font == null)
         {
             return;
+        }
+
+        // The display font has no "/", "+" or "·", so missing characters fall back to Unity's sans font.
+        TMP_FontAsset fallback = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        if (fallback != null && fallback != font)
+        {
+            if (font.fallbackFontAssetTable == null)
+            {
+                font.fallbackFontAssetTable = new System.Collections.Generic.List<TMP_FontAsset>();
+            }
+            if (!font.fallbackFontAssetTable.Contains(fallback))
+            {
+                font.fallbackFontAssetTable.Add(fallback);
+            }
         }
         foreach (TMP_Text text in canvas.GetComponentsInChildren<TMP_Text>(true))
         {
