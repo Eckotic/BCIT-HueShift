@@ -32,6 +32,10 @@ public class BattleEntity : MonoBehaviour
     public event Action<CardColor> OnCardColorChanged;
     // Fired once when health reaches 0.
     public event Action OnDied;
+    // (HP actually lost, amount absorbed by block). Used for hit effects and damage numbers.
+    public event Action<int, int> OnDamaged;
+    public event Action<int> OnBlockGained;
+    public event Action<int> OnHealed;
 
     void Awake()
     {
@@ -87,6 +91,7 @@ public class BattleEntity : MonoBehaviour
         }
 
         Debug.Log($"{gameObject.name} took {amount} damage ({absorbed} absorbed by block). HP: {currentHealth}/{maxHealth}, Block: {block}");
+        OnDamaged?.Invoke(remaining, absorbed);
 
         if (currentHealth <= 0){
             Debug.Log($"{gameObject.name} is now dead!");
@@ -102,6 +107,7 @@ public class BattleEntity : MonoBehaviour
 
         block += amount;
         Debug.Log($"{gameObject.name} Block: {block}");
+        OnBlockGained?.Invoke(amount);
     }
 
     public void ResetBlock()
@@ -120,6 +126,7 @@ public class BattleEntity : MonoBehaviour
             healthBar.SetHealth(currentHealth);
         }
         Debug.Log($"{gameObject.name} healed {amount}. HP: {currentHealth}/{maxHealth}");
+        OnHealed?.Invoke(amount);
     }
 
     // ---------- Colour ----------
@@ -159,6 +166,22 @@ public class BattleEntity : MonoBehaviour
         else if (currentColor == CardColor.Green)
         {
             Heal(greenHealPerTurn);
+        }
+    }
+
+    // Short text for the HUD: what this entity's current colour does.
+    public string ColorEffectText(bool isPlayer)
+    {
+        switch (currentColor)
+        {
+            case CardColor.Red: return $"+{redDamageBonus} damage";
+            case CardColor.Blue: return $"+{blueBlockBonus} block";
+            case CardColor.Purple: return $"+{purpleDamageBonus} dmg, +{purpleBlockBonus} block";
+            case CardColor.Orange: return "Deals and takes x2";
+            case CardColor.Green: return $"Heals {greenHealPerTurn} each turn";
+            case CardColor.Yellow: return isPlayer ? "+1 energy each turn" : "Acts twice";
+            case CardColor.Black: return "Locked until next turn";
+            default: return "No effect";
         }
     }
 

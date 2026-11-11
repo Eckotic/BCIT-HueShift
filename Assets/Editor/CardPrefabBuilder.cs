@@ -182,6 +182,11 @@ public static class CardPrefabBuilder
             list.InsertArrayElementAtIndex(i);
             list.GetArrayElementAtIndex(i).objectReferenceValue = starter[i];
         }
+        SerializedProperty back = deckData.FindProperty("cardBackSprite");
+        if (back != null)
+        {
+            back.objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>($"{ArtFolder}/Card_Base_Back.png");
+        }
         deckData.ApplyModifiedProperties(); // undoable with Ctrl+Z
         EditorSceneManager.MarkSceneDirty(deckManager.gameObject.scene);
 

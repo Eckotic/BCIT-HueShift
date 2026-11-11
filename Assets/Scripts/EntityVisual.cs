@@ -10,9 +10,47 @@ public class EntityVisual : MonoBehaviour
     public BattleEntity Entity => battleEntity;
     public SpriteRenderer Body => spriteRenderer;
 
+    private Vector3 restPosition;
+    private Coroutine hitRoutine;
+
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        restPosition = transform.localPosition;
+    }
+
+    // Shake and flash red when hit. Bigger hits shake harder.
+    public void PlayHit(int damage)
+    {
+        if (hitRoutine != null)
+        {
+            StopCoroutine(hitRoutine);
+            transform.localPosition = restPosition;
+        }
+        hitRoutine = StartCoroutine(HitRoutine(Mathf.Clamp(damage / 10f, 0.15f, 0.6f)));
+    }
+
+    private System.Collections.IEnumerator HitRoutine(float strength)
+    {
+        spriteRenderer.color = new Color(1f, 0.45f, 0.45f);
+        const float duration = 0.3f;
+        float t = 0f;
+        bool restored = false;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float falloff = 1f - t / duration;
+            transform.localPosition = restPosition + (Vector3)(Random.insideUnitCircle * strength * falloff);
+            if (!restored && t > 0.1f)
+            {
+                ApplyColor(battleEntity != null ? battleEntity.CurrentColor : CardColor.White);
+                restored = true;
+            }
+            yield return null;
+        }
+        transform.localPosition = restPosition;
+        ApplyColor(battleEntity != null ? battleEntity.CurrentColor : CardColor.White);
+        hitRoutine = null;
     }
 
     // Swaps the art (used when a new enemy comes in). The "Outline" child is hidden if outline is null.

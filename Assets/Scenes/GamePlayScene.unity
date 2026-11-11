@@ -1367,6 +1367,7 @@ MonoBehaviour:
   maxEnergy: 3
   energyText: {fileID: 0}
   yellowBonusEnergy: 1
+  cardBackSprite: {fileID: 21300000, guid: 588e44d90058cc0429e16cbf71be041f, type: 3}
 --- !u!4 &1174710254
 Transform:
   m_ObjectHideFlags: 0

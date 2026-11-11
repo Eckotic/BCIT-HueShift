@@ -26,8 +26,15 @@ public class DeckManager : MonoBehaviour
     [Tooltip("Extra energy at the start of the turn while the player is Yellow (3 becomes 4).")]
     [SerializeField] private int yellowBonusEnergy = 1;
 
+    [Header("Look")]
+    [Tooltip("Shown on the draw and discard piles. Set by HueShift > Build Card Prefabs.")]
+    [SerializeField] private Sprite cardBackSprite;
+
     private int currentEnergy;
     public int CurrentEnergy => currentEnergy;
+    public int MaxEnergy => maxEnergy;
+    public Transform HandArea => handArea;
+    public Sprite CardBackSprite => cardBackSprite;
 
     // True between fights and after the battle ends: no cards can be played.
     private bool inputLocked;
