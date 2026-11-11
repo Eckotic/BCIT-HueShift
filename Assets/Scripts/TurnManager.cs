@@ -47,6 +47,7 @@ public class TurnManager : MonoBehaviour
     {
         enemyVisual = FindVisualFor(enemy);
         intentText = BattleUI.CreateIntentLabel();
+        BattleHUD.Create(player, enemy, deckManager, FindVisualFor(player), enemyVisual, EnemyTitle);
 
         if (enemy != null)
         {
@@ -86,7 +87,13 @@ public class TurnManager : MonoBehaviour
         Bounds bounds = enemyVisual.Body.bounds;
         Vector3 top = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
         Vector3 screen = Camera.main.WorldToScreenPoint(top);
-        intentText.rectTransform.position = screen + (Vector3)intentOffset;
+        // Move the pill around the text (or the text itself if there's no pill).
+        RectTransform label = intentText.transform.parent as RectTransform;
+        if (label == null || label.GetComponent<Canvas>() != null)
+        {
+            label = intentText.rectTransform;
+        }
+        label.position = screen + (Vector3)intentOffset;
     }
 
     // Hooked to the End Turn button.
@@ -176,28 +183,29 @@ public class TurnManager : MonoBehaviour
         {
             return;
         }
-        if (battleOver || enemy == null || enemy.IsDead)
+        bool show = !(battleOver || enemy == null || enemy.IsDead);
+        Transform pill = intentText.transform.parent;
+        if (pill != null && pill.GetComponent<Canvas>() == null)
+        {
+            pill.gameObject.SetActive(show);
+        }
+        if (!show)
         {
             intentText.text = "";
             return;
         }
 
+        // The enemy's name and fight number are on its status panel; the pill shows only the move.
         EnemyMove move = CurrentMove();
-        string times = enemy.CurrentColor == CardColor.Yellow ? " x2" : "";
-        string action;
+        string times = enemy.CurrentColor == CardColor.Yellow ? "  x2" : "";
         if (move.type == EnemyMoveType.Attack)
         {
-            action = $"<color=#FF6B6B>Attack {enemy.OutgoingDamage(move.amount)}{times}</color>";
+            intentText.text = $"<color=#FF6B6B>ATTACK {enemy.OutgoingDamage(move.amount)}{times}</color>";
         }
         else
         {
-            action = $"<color=#6BB8FF>Block {enemy.BlockGain(move.amount, enemy.CurrentColor)}{times}</color>";
+            intentText.text = $"<color=#6BB8FF>BLOCK {enemy.BlockGain(move.amount, enemy.CurrentColor)}{times}</color>";
         }
-
-        EnemyData data = CurrentEnemy;
-        string enemyLabel = data != null ? data.enemyName : enemy.gameObject.name;
-        string fight = encounters.Count > 0 ? $" ({encounterIndex + 1}/{encounters.Count})" : "";
-        intentText.text = $"{enemyLabel}{fight}\n{action}";
     }
 
     // ---------- Encounters, win and lose ----------
@@ -294,6 +302,15 @@ public class TurnManager : MonoBehaviour
     private void Restart()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    // Title for the enemy's status panel, e.g. "SQUARE  1/3".
+    private string EnemyTitle()
+    {
+        EnemyData data = CurrentEnemy;
+        string enemyName = data != null ? data.enemyName : (enemy != null ? enemy.gameObject.name : "Enemy");
+        string fight = encounters.Count > 0 ? $"  {encounterIndex + 1}/{encounters.Count}" : "";
+        return enemyName.ToUpperInvariant() + fight;
     }
 
     private static EntityVisual FindVisualFor(BattleEntity entity)
