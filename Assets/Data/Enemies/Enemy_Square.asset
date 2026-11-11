@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef785ebf8e9b90246b63ed77ebef97bc, type: 3}
+  m_Name: Enemy_Square
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  enemyName: Square
+  maxHealth: 40
+  color: 0
+  bodySprite: {fileID: 21300000, guid: 2498798ccbcd4fa291bc58bf8eb2031e, type: 3}
+  outlineSprite: {fileID: 21300000, guid: 25268150c32044f3a6ce2e83f90f9de6, type: 3}
+  tintBody: 1
+  moves:
+  - type: 0
+    amount: 6
+  - type: 0
+    amount: 6
+  - type: 1
+    amount: 8

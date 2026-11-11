@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef785ebf8e9b90246b63ed77ebef97bc, type: 3}
+  m_Name: Enemy_Triangle
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  enemyName: Triangle
+  maxHealth: 35
+  color: 2
+  bodySprite: {fileID: 21300000, guid: 8656d72160977bd4ea52252749a7a6fe, type: 3}
+  outlineSprite: {fileID: 0}
+  tintBody: 0
+  moves:
+  - type: 0
+    amount: 4
+  - type: 1
+    amount: 5
