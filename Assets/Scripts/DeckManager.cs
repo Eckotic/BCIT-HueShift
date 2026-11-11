@@ -29,6 +29,9 @@ public class DeckManager : MonoBehaviour
     private int currentEnergy;
     public int CurrentEnergy => currentEnergy;
 
+    // True between fights and after the battle ends: no cards can be played.
+    private bool inputLocked;
+
     private List<GameObject> deck = new List<GameObject>();
     private List<GameObject> hand = new List<GameObject>();
     private List<GameObject> discard = new List<GameObject>();
@@ -88,7 +91,7 @@ public class DeckManager : MonoBehaviour
             Card card = cardInstance.GetComponent<Card>();
             if (button != null && card != null)
             {
-                button.interactable = card.Cost <= currentEnergy;
+                button.interactable = !inputLocked && card.Cost <= currentEnergy;
             }
 
             CardView view = cardInstance.GetComponent<CardView>();
@@ -97,6 +100,32 @@ public class DeckManager : MonoBehaviour
                 view.Refresh();
             }
         }
+    }
+
+    public void SetInputLocked(bool locked)
+    {
+        inputLocked = locked;
+        RefreshEnergy();
+    }
+
+    // Between fights: hand and discard go back into the deck, shuffle, and draw a fresh hand.
+    public void ResetForNewFight()
+    {
+        foreach (GameObject cardInstance in hand)
+        {
+            if (instancePrefabs.TryGetValue(cardInstance, out GameObject sourcePrefab))
+            {
+                deck.Add(sourcePrefab);
+                instancePrefabs.Remove(cardInstance);
+            }
+            Destroy(cardInstance);
+        }
+        hand.Clear();
+        deck.AddRange(discard);
+        discard.Clear();
+        ShuffleDeck();
+        Debug.Log($"New fight: deck reset to {deck.Count} cards.");
+        StartPlayerTurn();
     }
 
     // Called at the end of the player's turn: every card still in hand goes to the discard pile.
@@ -224,6 +253,11 @@ public class DeckManager : MonoBehaviour
 
     public void PlayCard(GameObject cardInstance)
     {
+        if (inputLocked)
+        {
+            return;
+        }
+
         if (!hand.Contains(cardInstance))
         {
             Debug.Log($"{cardInstance.name} is not in hand, can't play it.");

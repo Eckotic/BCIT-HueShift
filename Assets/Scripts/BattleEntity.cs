@@ -25,20 +25,42 @@ public class BattleEntity : MonoBehaviour
 
     public CardColor CurrentColor => currentColor;
     public bool IsDead => currentHealth <= 0;
+    public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
+    public int Block => block;
 
     public event Action<CardColor> OnCardColorChanged;
+    // Fired once when health reaches 0.
+    public event Action OnDied;
 
     void Awake()
     {
         currentColor = startingColor;
+        currentHealth = maxHealth;
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        currentHealth = maxHealth;
-        healthBar.SetMaxHealth(maxHealth);
+        if (healthBar != null)
+        {
+            healthBar.SetMaxHealth(maxHealth);
+            healthBar.SetHealth(currentHealth);
+        }
         OnCardColorChanged?.Invoke(currentColor);
+    }
+
+    // Resets this entity for a new fight (used when the next enemy comes in).
+    public void Setup(int newMaxHealth, CardColor color)
+    {
+        maxHealth = Mathf.Max(1, newMaxHealth);
+        currentHealth = maxHealth;
+        block = 0;
+        if (healthBar != null)
+        {
+            healthBar.SetMaxHealth(maxHealth);
+        }
+        SetCardColor(color);
     }
 
     //TODO: make this look nicer in the future
@@ -59,13 +81,16 @@ public class BattleEntity : MonoBehaviour
 
         if (remaining > 0){
             currentHealth = Mathf.Clamp(currentHealth - remaining, 0, maxHealth);
-            healthBar.SetHealth(currentHealth);
+            if (healthBar != null){
+                healthBar.SetHealth(currentHealth);
+            }
         }
 
         Debug.Log($"{gameObject.name} took {amount} damage ({absorbed} absorbed by block). HP: {currentHealth}/{maxHealth}, Block: {block}");
 
         if (currentHealth <= 0){
-            Debug.Log("Entity is now dead!");
+            Debug.Log($"{gameObject.name} is now dead!");
+            OnDied?.Invoke();
         }
     }
 
@@ -91,7 +116,9 @@ public class BattleEntity : MonoBehaviour
         }
 
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
-        healthBar.SetHealth(currentHealth);
+        if (healthBar != null){
+            healthBar.SetHealth(currentHealth);
+        }
         Debug.Log($"{gameObject.name} healed {amount}. HP: {currentHealth}/{maxHealth}");
     }
 
