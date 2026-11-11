@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 // Runs the battle: player turn -> enemy turn, enemy moves and intent, win/lose,
 // and the run of encounters (enemy dies -> next enemy -> ... -> Victory).
+// The enemy turn plays out as a short sequence (banner, wind-up, hit) so it reads clearly.
 public class TurnManager : MonoBehaviour
 {
     [SerializeField] private BattleEntity player;
@@ -21,16 +22,26 @@ public class TurnManager : MonoBehaviour
     [Tooltip("Seconds between an enemy dying and the next one appearing.")]
     [SerializeField] private float pauseBetweenFights = 1f;
 
+    [Header("Pacing")]
+    [Tooltip("Seconds between the enemy's actions. Lower = snappier enemy turns.")]
+    [SerializeField] private float enemyActionGap = 0.45f;
+
     [Header("Intent label")]
     [Tooltip("Screen-pixel offset of the intent label from the top of the enemy sprite.")]
     [SerializeField] private Vector2 intentOffset = new Vector2(0f, 10f);
 
+    private static readonly Color EnemyAccent = new Color(0.9f, 0.28f, 0.3f);
+    private static readonly Color PlayerAccent = new Color(0.45f, 0.5f, 1f);
+
+    private BattleHUD hud;
     private EntityVisual enemyVisual;
+    private EntityVisual playerVisual;
     private TMP_Text intentText;
     private int encounterIndex;
     private int moveIndex;
     private bool battleOver;
     private bool switchingFight;
+    private bool enemyTurnRunning;
 
     private EnemyData CurrentEnemy =>
         encounters.Count > 0 && encounterIndex < encounters.Count ? encounters[encounterIndex] : null;
@@ -46,8 +57,9 @@ public class TurnManager : MonoBehaviour
     void Start()
     {
         enemyVisual = FindVisualFor(enemy);
+        playerVisual = FindVisualFor(player);
         intentText = BattleUI.CreateIntentLabel();
-        BattleHUD.Create(player, enemy, deckManager, FindVisualFor(player), enemyVisual, EnemyTitle);
+        hud = BattleHUD.Create(player, enemy, deckManager, playerVisual, enemyVisual, EnemyTitle);
 
         if (enemy != null)
         {
@@ -63,6 +75,7 @@ public class TurnManager : MonoBehaviour
             LoadEncounter(0, false);
         }
         UpdateIntent();
+        StartCoroutine(OpeningBanner());
     }
 
     void OnDestroy()
@@ -77,41 +90,77 @@ public class TurnManager : MonoBehaviour
         }
     }
 
-    // Keeps the intent label above the enemy sprite.
+    // Keeps the intent pill above the enemy sprite, bobbing gently.
     void LateUpdate()
     {
         if (intentText == null || enemyVisual == null || enemyVisual.Body == null || Camera.main == null)
         {
             return;
         }
-        Bounds bounds = enemyVisual.Body.bounds;
-        Vector3 top = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
-        Vector3 screen = Camera.main.WorldToScreenPoint(top);
-        // Move the pill around the text (or the text itself if there's no pill).
         RectTransform label = intentText.transform.parent as RectTransform;
         if (label == null || label.GetComponent<Canvas>() != null)
         {
             label = intentText.rectTransform;
         }
-        label.position = screen + (Vector3)intentOffset;
+        float bob = Mathf.Sin(Time.time * 2.5f) * 4f;
+
+        // Docked just under the enemy's status panel, centred on it, so it reads as part of the
+        // enemy's info and can never overlap the panel. (Intent Offset nudges it.)
+        if (hud != null)
+        {
+            Vector3 anchor = hud.EnemyPanelBottomCentre();
+            float scale = label.lossyScale.y;
+            float height = label.rect.height * scale;
+            label.position = anchor + new Vector3(intentOffset.x * scale, -14f * scale - height + intentOffset.y * scale - 10f * scale + bob * scale, 0f);
+            return;
+        }
+
+        // Fallback without the HUD: above the art you can actually see.
+        Bounds bounds = enemyVisual.VisibleBounds();
+        Vector3 screen = Camera.main.WorldToScreenPoint(new Vector3(bounds.center.x, bounds.max.y, bounds.center.z));
+        label.position = screen + (Vector3)intentOffset + Vector3.up * bob;
+    }
+
+    private IEnumerator OpeningBanner()
+    {
+        yield return new WaitForSeconds(0.5f);
+        if (hud != null && !battleOver)
+        {
+            hud.ShowBanner("YOUR TURN", PlayerAccent);
+        }
     }
 
     // Hooked to the End Turn button.
     public void EndTurn()
     {
-        if (battleOver || switchingFight)
+        if (battleOver || switchingFight || enemyTurnRunning)
         {
             return;
         }
+        StartCoroutine(EnemyTurn());
+    }
 
-        // 1. Player's turn ends: the leftover hand goes to the discard pile.
+    private IEnumerator EnemyTurn()
+    {
+        enemyTurnRunning = true;
+        if (hud != null)
+        {
+            hud.SetEndTurnInteractable(false);
+        }
+
+        // 1. Player's turn ends: the leftover hand flies to the discard pile.
         if (deckManager != null)
         {
+            deckManager.SetInputLocked(true);
             deckManager.DiscardHand();
         }
+        yield return new WaitForSeconds(0.35f);
 
         // 2. Enemy's turn.
         Debug.Log("Enemy's turn.");
+        float bannerTime = hud != null ? hud.ShowBanner("ENEMY TURN", EnemyAccent) : 0f;
+        yield return new WaitForSeconds(bannerTime + 0.1f);
+
         if (enemy != null && !enemy.IsDead)
         {
             enemy.ResetBlock();   // its block from last turn wears off
@@ -122,14 +171,22 @@ public class TurnManager : MonoBehaviour
             int times = enemy.CurrentColor == CardColor.Yellow ? 2 : 1;
             for (int i = 0; i < times && !battleOver; i++)
             {
+                if (move.type == EnemyMoveType.Attack && enemyVisual != null && playerVisual != null)
+                {
+                    enemyVisual.Lunge(playerVisual.transform.position);
+                    Sfx.Play(t => t.enemyAttack, 0.8f, 0.1f);
+                    yield return new WaitForSeconds(0.2f); // land the hit on the strike frame
+                }
                 DoMove(move);
+                yield return new WaitForSeconds(enemyActionGap);
             }
             moveIndex++;
         }
 
         if (battleOver)
         {
-            return; // the player died
+            enemyTurnRunning = false;
+            yield break; // the player died
         }
 
         // 3. Back to the player: block wears off, colour effects tick, a fresh hand is drawn.
@@ -140,12 +197,23 @@ public class TurnManager : MonoBehaviour
         }
 
         Debug.Log("Back to player's turn.");
+        if (hud != null)
+        {
+            hud.ShowBanner("YOUR TURN", PlayerAccent);
+        }
+        yield return new WaitForSeconds(0.3f);
 
         if (deckManager != null)
         {
             deckManager.StartPlayerTurn(); // Yellow gives bonus energy here
+            deckManager.SetInputLocked(false);
         }
         UpdateIntent();
+        enemyTurnRunning = false;
+        if (hud != null)
+        {
+            hud.SetEndTurnInteractable(true);
+        }
     }
 
     // ---------- Enemy moves ----------
@@ -220,7 +288,9 @@ public class TurnManager : MonoBehaviour
         if (enemyVisual != null)
         {
             enemyVisual.SetLook(data.bodySprite, data.outlineSprite, data.tintBody);
+            enemyVisual.PlayEntrance();
         }
+        Sfx.Play(t => t.enemySpawn, 0.8f);
 
         if (resetPlayerSide)
         {
@@ -252,6 +322,11 @@ public class TurnManager : MonoBehaviour
         {
             deckManager.SetInputLocked(true);
         }
+        if (enemyVisual != null)
+        {
+            enemyVisual.PlayDeath();
+        }
+        Sfx.Play(t => t.enemyDeath);
         UpdateIntent();
         StartCoroutine(NextFightAfterPause());
     }
@@ -264,6 +339,10 @@ public class TurnManager : MonoBehaviour
         if (next < encounters.Count)
         {
             LoadEncounter(next, true);
+            if (hud != null)
+            {
+                hud.ShowBanner($"{encounters[next].enemyName.ToUpperInvariant()}  {next + 1}/{encounters.Count}", EnemyAccent);
+            }
             switchingFight = false;
             if (deckManager != null)
             {
@@ -275,6 +354,7 @@ public class TurnManager : MonoBehaviour
             switchingFight = false;
             battleOver = true;
             UpdateIntent();
+            Sfx.Play(t => t.victory);
             string subtitle = encounters.Count > 0 ? $"You beat all {encounters.Count} enemies." : "The enemy is defeated.";
             BattleUI.ShowEndScreen("Victory!", subtitle, new Color(1f, 0.85f, 0.2f), "Play again", Restart);
         }
@@ -293,7 +373,17 @@ public class TurnManager : MonoBehaviour
             deckManager.SetInputLocked(true);
         }
         UpdateIntent();
+        if (playerVisual != null)
+        {
+            playerVisual.PlayDeath();
+        }
+        StartCoroutine(DefeatAfterPause());
+    }
 
+    private IEnumerator DefeatAfterPause()
+    {
+        yield return new WaitForSeconds(0.8f);
+        Sfx.Play(t => t.defeat);
         EnemyData data = CurrentEnemy;
         string killer = data != null ? data.enemyName : "the enemy";
         BattleUI.ShowEndScreen("Defeat", $"You fell to {killer} in fight {encounterIndex + 1}.", new Color(1f, 0.35f, 0.35f), "Restart", Restart);
@@ -326,7 +416,7 @@ public class TurnManager : MonoBehaviour
                 return visual;
             }
         }
-        Debug.LogWarning($"TurnManager: no EntityVisual found for {entity.name}, enemy art won't change between fights.");
+        Debug.LogWarning($"TurnManager: no EntityVisual found for {entity.name}, its animations won't play.");
         return null;
     }
 }

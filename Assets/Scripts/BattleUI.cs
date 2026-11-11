@@ -107,6 +107,7 @@ public static class BattleUI
         TextMeshProUGUI text = Text(image.transform, "Label", label, fontSize, labelColor, FontStyles.Bold);
         text.characterSpacing = 4f;
         Stretch(text.rectTransform);
+        image.gameObject.AddComponent<UIHover>();
         return button;
     }
 
@@ -120,7 +121,7 @@ public static class BattleUI
             return null;
         }
 
-        Image pill = Box(canvas.transform, "EnemyIntent", UIShapes.RoundedRect(24), new Color(0.07f, 0.08f, 0.11f, 0.88f));
+        Image pill = Box(canvas.transform, "EnemyIntent", UIShapes.FramedPanel(20, 3), Color.white);
         pill.rectTransform.pivot = new Vector2(0.5f, 0f);
         Shadow(pill);
         HorizontalLayoutGroup layout = pill.gameObject.AddComponent<HorizontalLayoutGroup>();

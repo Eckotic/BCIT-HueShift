@@ -1238,6 +1238,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ec499c9527e0e164294e6ee8766e0fd7, type: 2}
   - {fileID: 11400000, guid: 1241f1b57a3dc564cbe3e070bb9e89b3, type: 2}
   pauseBetweenFights: 1
+  enemyActionGap: 0.45
   intentOffset: {x: 0, y: 10}
 --- !u!4 &992991425
 Transform:

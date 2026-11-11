@@ -39,6 +39,11 @@ public class DeckManager : MonoBehaviour
     // True between fights and after the battle ends: no cards can be played.
     private bool inputLocked;
 
+    // Optional animations (set by BattleHUD). Each one takes over the card object and destroys it when done.
+    // If not set, cards are simply destroyed.
+    public System.Action<GameObject, Card> PlayAnimation;
+    public System.Action<GameObject, int> DiscardAnimation;
+
     private List<GameObject> deck = new List<GameObject>();
     private List<GameObject> hand = new List<GameObject>();
     private List<GameObject> discard = new List<GameObject>();
@@ -138,6 +143,7 @@ public class DeckManager : MonoBehaviour
     // Called at the end of the player's turn: every card still in hand goes to the discard pile.
     public void DiscardHand()
     {
+        int index = 0;
         foreach (GameObject cardInstance in hand)
         {
             if (instancePrefabs.TryGetValue(cardInstance, out GameObject sourcePrefab))
@@ -145,7 +151,14 @@ public class DeckManager : MonoBehaviour
                 discard.Add(sourcePrefab);
                 instancePrefabs.Remove(cardInstance);
             }
-            Destroy(cardInstance);
+            if (DiscardAnimation != null)
+            {
+                DiscardAnimation(cardInstance, index++);
+            }
+            else
+            {
+                Destroy(cardInstance);
+            }
         }
         Debug.Log($"Discarded {hand.Count} card(s) from hand. Deck: {deck.Count}, Discard: {discard.Count}");
         hand.Clear();
@@ -296,7 +309,14 @@ public class DeckManager : MonoBehaviour
             instancePrefabs.Remove(cardInstance);
         }
 
-        Destroy(cardInstance);
+        if (PlayAnimation != null && card != null)
+        {
+            PlayAnimation(cardInstance, card);
+        }
+        else
+        {
+            Destroy(cardInstance);
+        }
         RefreshPileCounts();
         RefreshEnergy();
     }

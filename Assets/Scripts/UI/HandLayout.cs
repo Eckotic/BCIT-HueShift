@@ -29,6 +29,10 @@ public class HandLayout : MonoBehaviour
 
     private RectTransform area;
     private readonly List<RectTransform> cards = new List<RectTransform>();
+    private RectTransform lastHovered;
+    private readonly Dictionary<RectTransform, float> releaseAt = new Dictionary<RectTransform, float>();
+    [Tooltip("Seconds between cards when a new hand is dealt.")]
+    public float dealInterval = 0.08f;
 
     void Awake()
     {
@@ -51,6 +55,15 @@ public class HandLayout : MonoBehaviour
 
         float spacing = n > 1 ? Mathf.Min(cardSpacing, maxHandWidth / (n - 1)) : 0f;
         int hovered = FindHovered(n, spacing);
+        RectTransform hoveredCard = hovered >= 0 ? cards[hovered] : null;
+        if (hoveredCard != lastHovered)
+        {
+            if (hoveredCard != null)
+            {
+                Sfx.Play(t => t.cardHover, 0.25f, 0.12f);
+            }
+            lastHovered = hoveredCard;
+        }
         float k = 1f - Mathf.Exp(-followSpeed * Time.deltaTime);
 
         for (int i = 0; i < n; i++)
@@ -77,6 +90,18 @@ public class HandLayout : MonoBehaviour
                 }
             }
 
+            // Newly drawn cards wait at the draw pile for their turn, then deal out one by one.
+            if (releaseAt.TryGetValue(card, out float release))
+            {
+                if (Time.time < release)
+                {
+                    card.SetSiblingIndex(i);
+                    continue;
+                }
+                releaseAt.Remove(card);
+                Sfx.Play(t => t.cardDraw, 0.35f, 0.15f);
+            }
+
             card.anchoredPosition = Vector2.Lerp(card.anchoredPosition, targetPos, k);
             card.localRotation = Quaternion.Slerp(card.localRotation, Quaternion.Euler(0f, 0f, targetAngle), k);
             card.localScale = Vector3.Lerp(card.localScale, Vector3.one * targetScale, k);
@@ -93,6 +118,22 @@ public class HandLayout : MonoBehaviour
     private void SyncCards()
     {
         cards.RemoveAll(card => card == null || card.parent != transform);
+        if (releaseAt.Count > 0)
+        {
+            List<RectTransform> gone = new List<RectTransform>();
+            foreach (RectTransform key in releaseAt.Keys)
+            {
+                if (key == null || !cards.Contains(key))
+                {
+                    gone.Add(key);
+                }
+            }
+            foreach (RectTransform key in gone)
+            {
+                releaseAt.Remove(key);
+            }
+        }
+        int newCards = 0;
         foreach (Transform child in transform)
         {
             RectTransform rect = child as RectTransform;
@@ -104,10 +145,12 @@ public class HandLayout : MonoBehaviour
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
             if (spawnFrom != null)
             {
-                rect.position = spawnFrom.position; // fly in from the draw pile
+                rect.position = spawnFrom.TransformPoint(spawnFrom.rect.center); // fly in from the draw pile
             }
             rect.localScale = Vector3.one * 0.35f;
             rect.localRotation = Quaternion.Euler(0f, 0f, 25f);
+            releaseAt[rect] = Time.time + newCards * dealInterval;
+            newCards++;
         }
     }
 
