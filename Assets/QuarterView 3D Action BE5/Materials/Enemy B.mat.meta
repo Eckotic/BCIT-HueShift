@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ca8f7263bc27eb6a24d74ab8af34baab9808b38ef142ab86f40712e46f685c4b
-size 397
+fileFormatVersion: 2
+guid: 5084a2898f8f55840931eb7419d779e2
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Materials/Enemy B.mat
+  uploadId: 417301

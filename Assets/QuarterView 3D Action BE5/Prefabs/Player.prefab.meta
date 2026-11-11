@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d8d00d8e8c7e72ddf2f8e97592636bfbe31d09aff77f65730780a2b96e189ee3
-size 369
+fileFormatVersion: 2
+guid: 8f5e135a19626f544908fc8f156144b9
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Player.prefab
+  uploadId: 417301

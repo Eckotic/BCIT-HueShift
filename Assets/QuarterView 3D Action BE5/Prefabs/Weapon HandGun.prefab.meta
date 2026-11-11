@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:290e85800b9f2ff6472eb9569f5ac4687962d809f1183c3d0d5f70305d91b6c6
-size 377
+fileFormatVersion: 2
+guid: a2e051660762cbe4494c17a095a95e10
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Weapon HandGun.prefab
+  uploadId: 417301
