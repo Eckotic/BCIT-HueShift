@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:fb093a1613a66c50e2cbcaf76325eab43a74939abecec8a9a3802b18076ed8e0
-size 396
+fileFormatVersion: 2
+guid: 9aed8e613167e4340b625e15add095e8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Materials/Player.mat
+  uploadId: 417301

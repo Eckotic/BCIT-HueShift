@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0ab560d8c02dc563ef0cec2614f35526d9be690b27f09c81904809919ce4f3cd
-size 405
+fileFormatVersion: 2
+guid: ecabd400f66febc408288170bcd623b0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Materials/Weapon Hand Gun.mat
+  uploadId: 417301

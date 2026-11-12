@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:3163a97dff5a17f34c1ce43681dcc8a5c3c1c7f3aa583762d42f4353cf5ab0df
-size 419
+fileFormatVersion: 2
+guid: 0c1be902f058be04dbb1732da08d51f2
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 22100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Demo/Demo/Ac Luna.overrideController
+  uploadId: 417301

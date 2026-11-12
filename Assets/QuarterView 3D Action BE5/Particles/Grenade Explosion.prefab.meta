@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:113f039fb8e589ee02225989282f1b6575312836e5a307ff594276649fcd7e8e
-size 382
+fileFormatVersion: 2
+guid: 46ffadbb188f9ab498b623c4290ef656
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Particles/Grenade Explosion.prefab
+  uploadId: 417301

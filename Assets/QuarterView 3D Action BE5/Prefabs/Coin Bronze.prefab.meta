@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:28fe99ada612edf84007ee81b45440853b59bff59bf99872648462c8ba47c876
-size 374
+fileFormatVersion: 2
+guid: eff93d3a6c14e3648a925ff48d25d216
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Coin Bronze.prefab
+  uploadId: 417301

@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:9515031c685c4c267ee233330bc77c888781d5d693692b9894bffb25beba0577
-size 372
+fileFormatVersion: 2
+guid: 5f990ffaa293ab14ebc81ec38b817d0b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Coin Gold.prefab
+  uploadId: 417301

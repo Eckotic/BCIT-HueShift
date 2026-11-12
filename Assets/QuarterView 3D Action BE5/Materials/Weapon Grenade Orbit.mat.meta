@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:40c076b76162fb591af07d1d21f84a2d9f72852959dfc9a97c49fc78ea390b84
-size 410
+fileFormatVersion: 2
+guid: 2a23167c0fe318144b05a634f6bcba86
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Materials/Weapon Grenade Orbit.mat
+  uploadId: 417301

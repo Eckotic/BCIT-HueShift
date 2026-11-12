@@ -1,3 +1,15 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:98ff384b0a88864ae42fdc9f036dc2caec15fc27cb39c2256bf9b830b312c976
-size 397
+fileFormatVersion: 2
+guid: b7f684c70702ad4498c01dd7a2ce0b3c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Materials/Missile.mat
+  uploadId: 417301

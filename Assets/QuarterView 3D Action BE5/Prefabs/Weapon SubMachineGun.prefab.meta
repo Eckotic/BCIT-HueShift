@@ -1,3 +1,14 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:b6925dd8df321748eba8e3b63d64fcf48a9958f95cee6f766fde67adeeeb0d5c
-size 383
+fileFormatVersion: 2
+guid: 203326381d9b54d489646c6c2f61f53a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 188720
+  packageName: Quarter View 3D Action Assets Pack
+  packageVersion: 1.0
+  assetPath: Assets/QuarterView 3D Action BE5/Prefabs/Weapon SubMachineGun.prefab
+  uploadId: 417301
